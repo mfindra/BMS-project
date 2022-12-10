@@ -107,6 +107,7 @@ def gf_mul(x,y):
     if x==0 or y==0:
         return 0
     return gf_exp[gf_log[x] + gf_log[y]] # should be gf_exp[(gf_log[x]+gf_log[y])%255] if gf_exp wasn't oversized
+    #print (f">gf mul: {gf_exp[gf_log[x] + gf_log[y]]}")
 
 def gf_div(x,y):
     if y==0:
@@ -117,6 +118,7 @@ def gf_div(x,y):
 
 
 def gf_pow(x, power):
+    print(f">gf pow: {gf_exp[(gf_log[x] * power) % 255]} with x={x}, power={power}")
     return gf_exp[(gf_log[x] * power) % 255]
 
 def gf_inverse(x):
@@ -144,8 +146,14 @@ def gf_poly_mul(p,q):
     # we multiply each coefficients of p with all coefficients of q)
     for j in range(0, len(q)):
         for i in range(0, len(p)):
+            print(f"before===> {r[i+j]}")
+            print(f"before===> {r}")
+            print(f"xor({r[i+j]}, {gf_mul(p[i], q[j])}) = {r[i+j] ^ gf_mul(p[i], q[j]) }")
             r[i+j] ^= gf_mul(p[i], q[j]) # equivalent to: r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))
                                                          # -- you can see it's your usual polynomial multiplication
+            print(f"after===> {r[i+j]}")                                                         
+            print(f"after===> {r}")
+            print()
     return r
 
 def gf_poly_eval(poly, x):
@@ -159,6 +167,7 @@ def rs_generator_poly(nsym):
     '''Generate an irreducible generator polynomial (necessary to encode a message into Reed-Solomon)'''
     g = [1]
     for i in range(0, nsym):
+        print(f"tmp: {[1, gf_pow(3, i+1)]}")
         g = gf_poly_mul(g, [1, gf_pow(3, i+1)])
     return g
 
@@ -203,6 +212,16 @@ def rs_encode_msg(msg_in, nsym):
     '''Reed-Solomon main encoding function, using polynomial division (algorithm Extended Synthetic Division)'''
     if (len(msg_in) + nsym) > 255: raise ValueError("Message is too long (%i when max is 255)" % (len(msg_in)+nsym))
     gen = rs_generator_poly(nsym)
+    
+    print("==========================")
+    print(f"message: {msg_in}")
+    print(f"nsym: {nsym}")
+    print(f"generator poly:        {gen}")
+    print(f"generator poly binary: ",end="")
+    for i in gen:
+        print(f'{i:>08b}',end=" ")
+    print("\n==========================")
+
     # Init msg_out with the values inside msg_in and pad with len(gen)-1 bytes (which is the number of ecc symbols).
     msg_out = [0] * (len(msg_in) + len(gen)-1)
     # Initializing the Synthetic Division with the dividend (= input message polynomial)
@@ -231,18 +250,19 @@ def rs_encode_msg(msg_in, nsym):
     return msg_out
 
 prim = 0x11b
-n = 20 # set the size you want, it must be > k, the remaining n-k symbols will be the ECC code (more is better)
-k = 13 # k = len(message)
-message = "Hello, world!" # input message
+n = 5 # set the size you want, it must be > k, the remaining n-k symbols will be the ECC code (more is better)
+k = 3 # k = len(message)
+message = "abc" # input message
 
 # Initializing the log/antilog tables
 init_tables(prim)
-print(gf_log)
-print(gf_exp)
+#print(gf_log)
+#print(gf_exp)
 
 # Encoding the input message
 mesecc = rs_encode_msg([ord(x) for x in message], n-k)
 
+print("\nresult:")
 for i in mesecc:
     #print(f'{i:>2} in binary is {i:>08b}')
     print(f'{i:>08b}',end="")
