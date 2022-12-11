@@ -106,8 +106,9 @@ def init_tables(prim=0x11d):
 def gf_mul(x,y):
     if x==0 or y==0:
         return 0
-    return gf_exp[gf_log[x] + gf_log[y]] # should be gf_exp[(gf_log[x]+gf_log[y])%255] if gf_exp wasn't oversized
     #print (f">gf mul: {gf_exp[gf_log[x] + gf_log[y]]}")
+    #print(f"x: {gf_log[x]} y: {gf_log[y]} result: {gf_exp[gf_log[x] + gf_log[y]]}")
+    return gf_exp[gf_log[x] + gf_log[y]] # should be gf_exp[(gf_log[x]+gf_log[y])%255] if gf_exp wasn't oversized
 
 def gf_div(x,y):
     if y==0:
@@ -146,14 +147,14 @@ def gf_poly_mul(p,q):
     # we multiply each coefficients of p with all coefficients of q)
     for j in range(0, len(q)):
         for i in range(0, len(p)):
-            print(f"before===> {r[i+j]}")
-            print(f"before===> {r}")
-            print(f"xor({r[i+j]}, {gf_mul(p[i], q[j])}) = {r[i+j] ^ gf_mul(p[i], q[j]) }")
+            #print(f"before===> {r[i+j]}")
+            #print(f"before===> {r}")
+            #print(f"xor({r[i+j]}, {gf_mul(p[i], q[j])}) = {r[i+j] ^ gf_mul(p[i], q[j]) }")
             r[i+j] ^= gf_mul(p[i], q[j]) # equivalent to: r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))
                                                          # -- you can see it's your usual polynomial multiplication
-            print(f"after===> {r[i+j]}")                                                         
-            print(f"after===> {r}")
-            print()
+            #print(f"after===> {r[i+j]}")                                                         
+            #print(f"after===> {r}")
+            #print()
     return r
 
 def gf_poly_eval(poly, x):
@@ -195,9 +196,10 @@ def gf_poly_div(dividend, divisor):
     # (the remainder has necessarily the same degree as the divisor -- not length but degree == length-1 -- since it's
     # what we couldn't divide from the dividend), so we compute the index where this separation is, and return the quotient and remainder.
     separator = -(len(divisor)-1)
+    print(f"gf_poly_div: {dividend}, {divisor}, {msg_out}")
     return msg_out[:separator], msg_out[separator:] # return quotient, remainder.
 
-def rs_encode_msg(msg_in, nsym):
+def rs_encode_msgt(msg_in, nsym):
     '''Reed-Solomon main encoding function'''
     gen = rs_generator_poly(nsym)
 
@@ -227,6 +229,8 @@ def rs_encode_msg(msg_in, nsym):
     # Initializing the Synthetic Division with the dividend (= input message polynomial)
     msg_out[:len(msg_in)] = msg_in
 
+    print(f"msg_out: {msg_out}")
+
     # Synthetic division main loop
     for i in range(len(msg_in)):
         # Note that it's msg_out here, not msg_in. Thus, we reuse the updated value at each iteration
@@ -239,20 +243,26 @@ def rs_encode_msg(msg_in, nsym):
         if coef != 0:
             # in synthetic division, we always skip the first coefficient of the divisior, because it's only used to normalize the dividend coefficient (which is here useless since the divisor, the generator polynomial, is always monic)
             for j in range(1, len(gen)):
+                #print(msg_out[i+j])
+                #print(gf_mul(gen[j], coef))
+                #print(f"genj: {gen[j]} coef: {coef}")
                 msg_out[i+j] ^= gf_mul(gen[j], coef) # equivalent to msg_out[i+j] += gf_mul(gen[j], coef)
+                #print(i, j)
+                #print(msg_out)
 
     # At this point, the Extended Synthetic Divison is done, msg_out contains the quotient in msg_out[:len(msg_in)]
     # and the remainder in msg_out[len(msg_in):]. Here for RS encoding, we don't need the quotient but only the remainder
     # (which represents the RS code), so we can just overwrite the quotient with the input message, so that we get
     # our complete codeword composed of the message + code.
+    print(msg_out)
     msg_out[:len(msg_in)] = msg_in
 
     return msg_out
 
 prim = 0x11b
-n = 5 # set the size you want, it must be > k, the remaining n-k symbols will be the ECC code (more is better)
-k = 3 # k = len(message)
-message = "abc" # input message
+n = 32 # set the size you want, it must be > k, the remaining n-k symbols will be the ECC code (more is better)
+k = 25 # k = len(message)
+message = "Bezdratove a mobilni site" # input message
 
 # Initializing the log/antilog tables
 init_tables(prim)
@@ -263,6 +273,7 @@ init_tables(prim)
 mesecc = rs_encode_msg([ord(x) for x in message], n-k)
 
 print("\nresult:")
+print(mesecc)
 for i in mesecc:
     #print(f'{i:>2} in binary is {i:>08b}')
     print(f'{i:>08b}',end="")

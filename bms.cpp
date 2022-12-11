@@ -10,12 +10,14 @@ description:
 #include <stdio.h>
 #include <string.h>
 
+#include <bitset>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <list>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #define BLOCK_LENGTH 8
 
@@ -38,7 +40,7 @@ int GF_field_exp[256] = {1, 3, 5, 15, 17, 51, 85, 255, 26, 46, 114, 150, 161, 24
                          141, 140, 143, 138, 133, 148, 167, 242, 13, 23, 57, 75, 221, 124,
                          132, 151, 162, 253, 28, 36, 108, 180, 199, 82, 246, 1};
 
-int GF_field_log[256] = {0, 0, 25, 1, 50, 2, 26, 198, 75, 199, 27, 104, 51, 238, 223,
+int GF_field_log[256] = {-1, 0, 25, 1, 50, 2, 26, 198, 75, 199, 27, 104, 51, 238, 223,
                          3, 100, 4, 224, 14, 52, 141, 129, 239, 76, 113, 8, 200, 248, 105,
                          28, 193, 125, 194, 29, 181, 249, 185, 39, 106, 77, 228, 166, 114,
                          154, 201, 9, 120, 101, 47, 138, 5, 33, 15, 225, 36, 18, 240, 130,
@@ -59,6 +61,16 @@ int GF_field_log[256] = {0, 0, 25, 1, 50, 2, 26, 198, 75, 199, 27, 104, 51, 238,
 
 using namespace std;
 
+template <class T>
+T operator+(const T& l, T&& r) {
+    T c{};
+    c.reserve(l.size() + r.size());
+    auto bi = std::back_inserter(c);
+    std::copy(l.begin(), l.end(), bi);
+    std::move(r.begin(), r.end(), bi);
+    return c;
+}
+
 // print help message to standard output
 void PrintHelp() {
     cout << "ENCRYPT AND DECRYPT MESSAGE USING REED-SOLOMON ALGORITHM - BMS PROJECT 2022" << endl;
@@ -78,8 +90,8 @@ void PrintHelp() {
          << "       reciever: sudo ./secret - l" << endl;
 }
 
-void showlist(list<int> g) {
-    list<int>::iterator it;
+void showvector(vector<int> g) {
+    vector<int>::iterator it;
     cout << "[";
     for (it = g.begin(); it != g.end(); ++it)
         if (it != g.begin())
@@ -93,7 +105,9 @@ int gf_mul(int x, int y) {
     if (x == 0 || y == 0)
         return 0;
     // cout << "gf mul: " << GF_field_exp[GF_field_log[x] + GF_field_log[y]] << endl;
-    return GF_field_exp[GF_field_log[x] + GF_field_log[y]];  // should be gf_exp[(gf_log[x]+gf_log[y])%255] if gf_exp wasn't oversized
+    // cout << tmp << endl;
+    // cout << "x: " << GF_field_log[x] << "y: " << GF_field_log[y] << "result: " << GF_field_exp[((GF_field_log[x] + GF_field_log[y]) % 255)] << endl;
+    return GF_field_exp[((GF_field_log[x] + GF_field_log[y]) % 255)];  // should be gf_exp[(gf_log[x]+gf_log[y])%255] if gf_exp wasn't oversized
 }
 
 int gf_pow(int x, int power) {
@@ -101,73 +115,136 @@ int gf_pow(int x, int power) {
     return GF_field_exp[(GF_field_log[x] * power) % 255];
 }
 
-list<int> gf_poly_mul(list<int> p, list<int> q) {
+vector<int> gf_poly_mul(vector<int> p, vector<int> q) {
     // Multiply two polynomials, inside Galois Field
     //  Pre-allocate the result array
-    list<int> r;
-    list<int> rr;
+    vector<int> r;
+    vector<int> rr;
     for (int i = 0; i < p.size() + q.size() - 1; i++)
         r.push_back(0);
 
-    cout << "before bef: ";
-    showlist(r);
-    // Compute the polynomial multiplication (just like the outer product of two vectors,
-    // we multiply each coefficients of p with all coefficients of q)
+    // cout << "before bef: ";
+    // showvector(r);
+    //  Compute the polynomial multiplication (just like the outer product of two vectors,
+    //  we multiply each coefficients of p with all coefficients of q)
     for (int j = 0; j < q.size(); j++) {
         for (int i = 0; i < p.size(); i++) {
             auto it = r.begin();
-            list<int>::iterator itp = p.begin();
-            list<int>::iterator itq = q.begin();
+            vector<int>::iterator itp = p.begin();
+            vector<int>::iterator itq = q.begin();
             advance(it, i + j);
             advance(itp, i);
             advance(itq, j);
             int itx = *it;
             int itpx = *itp;
             int itqx = *itq;
-            cout << "before===> " << itx << endl;
-            // cout << "item in p at: " << i << " is: " << itpx << endl;
-            // cout << "item in q at: " << j << " is: " << itqx << endl;
+            // cout << "before===> " << itx << endl;
+            //  cout << "item in p at: " << i << " is: " << itpx << endl;
+            //  cout << "item in q at: " << j << " is: " << itqx << endl;
             int tmp;
-            cout << "before===> ";
-            showlist(r);
+            // cout << "before===> ";
+            // showvector(r);
 
             // auto l = r.erase(it);
             // cout << ">>" << *l << endl;
             tmp = gf_mul(itpx, itqx);
-            cout << "xor(" << itx << ", " << tmp << ") = " << (itx ^ gf_mul(itpx, itqx)) << endl;
+            // cout << "xor(" << itx << ", " << tmp << ") = " << (itx ^ gf_mul(itpx, itqx)) << endl;
             auto k = r.erase(it);
             r.insert(k, itx ^ gf_mul(itpx, itqx));  // equivalent to: r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))
             // cout << "after:  ";
-            cout << "after===> ";
-            showlist(r);
+            // cout << "after===> ";
+            // showvector(r);
         }
     }
     return r;
 }
 
-list<int> rs_generator_poly(int nsym) {
-    // Generate an irreducible generator polynomial (necessary to encode a message into Reed-Solomon)
-    list<int> g;
-    g.push_back(1);
-    for (int i = 1; i < nsym; i++) {
-        list<int> tmp;
-        tmp.push_back(1);
-        tmp.push_back(gf_pow(3, i));
-        cout << "tmp: ";
-        showlist(tmp);
-        g = gf_poly_mul(g, tmp);
-        cout << "g after: ";
-        showlist(g);
-        cout << "rs gener: ";
-        showlist(g);
-        cout << "===================" << endl;
+vector<int> gf_poly_div(const std::vector<int>& dividend, const std::vector<int>& divisor) {
+    vector<int> msg_out = dividend;  // copy the dividend
+
+    for (int i = 0; i < dividend.size() - (divisor.size() - 1); ++i) {
+        int coef = msg_out[i];  // precaching
+        if (coef != 0)          // log(0) is undefined, so we need to avoid that case explicitly (and it's also a good optimization).
+        {
+            for (int j = 1; j < divisor.size(); ++j)  // in synthetic division, we always skip the first coefficient of the divisor,
+                                                      // because it's only used to normalize the dividend coefficient
+            {
+                if (divisor[j] != 0)  // log(0) is undefined
+                {
+                    // equivalent to the more mathematically correct
+                    // (but xoring directly is faster): msg_out[i + j] += -divisor[j] * coef
+                    msg_out[i + j] ^= gf_mul(divisor[j], coef);
+                }
+            }
+        }
     }
 
+    return msg_out;
+}
+
+vector<int> rs_generator_poly(int nsym) {
+    // Generate an irreducible generator polynomial (necessary to encode a message into Reed-Solomon)
+    vector<int> g;
+    g.push_back(1);
+    for (int i = 1; i <= nsym; i++) {
+        vector<int> tmp;
+        tmp.push_back(1);
+        tmp.push_back(gf_pow(3, i));
+        // cout << "tmp: ";
+        // showvector(tmp);
+        g = gf_poly_mul(g, tmp);
+        // cout << "g after: ";
+        // showvector(g);
+        // cout << "rs gener: ";
+        // showvector(g);
+        // cout << "===================" << endl;
+    }
+    cout << "generator poly: ";
+    showvector(g);
     return g;
 }
 
-int main(int argc, char **argv) {
-    string n_opt;  // coded message length
+std::vector<int> rs_encode_msg(const std::vector<int>& msg_in, int nsym) {
+    if (msg_in.size() + nsym > 255) {
+        throw std::invalid_argument("Message is too long");
+    }
+
+    cout << nsym << endl;
+    std::vector<int> gen = rs_generator_poly(nsym);
+    std::vector<int> msg_out(msg_in.size() + gen.size() - 1);
+
+    // initialize the first part of the output message with the input message
+    for (int i = 0; i < msg_in.size(); i++) {
+        msg_out[i] = msg_in[i];
+    }
+    cout << "msg_out: ";
+    showvector(msg_out);
+
+    cout << "msg_in: ";
+    showvector(msg_in);
+
+    for (int i = 0; i < msg_in.size(); i++) {
+        int coef = msg_out[i];
+
+        if (coef != 0) {
+            for (int j = 1; j < gen.size(); j++) {
+                // cout << endl;
+                // cout << "msg_out[i,j]: " << msg_out[i + j] << endl;
+                // cout << "second: " << gf_mul(gen[j], coef) << endl;
+                // cout << "genj: " << gen[j] << "coef: " << coef << endl;
+                msg_out[i + j] ^= gf_mul(gen[j], coef);
+                // cout << "i: " << i << "j: " << j << endl;
+                // showvector(msg_out);
+            }
+        }
+    }
+
+    showvector(msg_out);
+    return msg_out;
+}
+
+int main(int argc, char** argv) {
+    int n_opt;  // coded message length
     string t_opt;
     string k_opt;  // message length
     string m_opt;  // coded message
@@ -188,7 +265,7 @@ int main(int argc, char **argv) {
                 decrypt_switch = true;
                 break;
             case 'n':
-                n_opt = optarg;
+                n_opt = stoi(optarg);
                 break;
             case 't':
                 t_opt = optarg;
@@ -211,22 +288,43 @@ int main(int argc, char **argv) {
 
     // check application mode
     if (encrypt_switch) {
-        // p(x) = i(x)*x^(n-k) mod g(x)
+        // convert the string to a vector of ordinal values
+        std::vector<int> msg_in;
+        msg_in.assign(t_opt.begin(), t_opt.end());
 
-        if (debug) {
-            for (int i : GF_field_exp)
-                cout << i << ", ";
-            cout << "block len: " << BLOCK_LENGTH << endl;
+        auto a = rs_encode_msg(msg_in, n_opt - msg_in.size());
+        showvector(msg_in);
+
+        a.erase(a.begin(), a.begin() + msg_in.size());
+
+        for (int x : a) msg_in.push_back(x);
+
+        showvector(msg_in);
+        for (int x : msg_in) {
+            std::bitset<8> bits(x);         // create a bitset with 8 bits, initialized with the value of x
+            std::cout << bits.to_string();  // print the binary representation of the bitset
         }
 
-        // ./bms -e -n 5 -t "abc"
-        // 01100001 01100010 01100011 01111000 01011111
-        // a        b        c        x        _
-
-        auto a = rs_generator_poly(3);
-        showlist(a);
     } else if (decrypt_switch) {
     }
 
     return EXIT_SUCCESS;
 }
+
+// 01100001 01100010 011000110 11110000 1011111
+// 01100001 01100010 011000110 11110000 1011111
+
+/*
+011000100110110101110011001100000110110001111100
+011000100110110101110011001100000110110001111100
+011000100110110101110011001100000110110001111100
+
+0100100001100101011011000110110001101111001011000010000001110111011011110111001001101100011001000010000110001101000100111111010011111001010000110001000011100101
+0100100001100101011011000110110001101111001011000010000001110111011011110111001001101100011001000010000110001101000100111111010011111001010000110001000011100101
+0100100001100101011011000110110001101111001011000010000001110111011011110111001001101100011001000010000110001101000100111111010011111001010000110001000011100101
+
+0100001001100101011110100110010001110010011000010111010001101111011101100110010100100000011000010010000001101101011011110110001001101001011011000110111001101001001000000111001101101001011101000110010101000001100011101110100101101110011010100001110010011110
+0100001001100101011110100110010001110010011000010111010001101111011101100110010100100000011000010010000001101101011011110110001001101001011011000110111001101001001000000111001101101001011101000110010101000001100011101110100101101110011010100001110010011110
+0100001001100101011110100110010001110010011000010111010001101111011101100110010100100000011000010010000001101101011011110110001001101001011011000110111001101001001000000111001101101001011101000110010101000001100011101110100101101110011010100001110010011110
+
+*/
