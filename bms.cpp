@@ -20,6 +20,7 @@ description:
 #include <vector>
 
 #define BLOCK_LENGTH 8
+#define DEBUG 0
 
 int GF_field_exp[256] = {1, 3, 5, 15, 17, 51, 85, 255, 26, 46, 114, 150, 161, 248, 19,
                          53, 95, 225, 56, 72, 216, 115, 149, 164, 247, 2, 6, 10, 30, 34,
@@ -104,14 +105,10 @@ void showvector(vector<int> g) {
 int gf_mul(int x, int y) {
     if (x == 0 || y == 0)
         return 0;
-    // cout << "gf mul: " << GF_field_exp[GF_field_log[x] + GF_field_log[y]] << endl;
-    // cout << tmp << endl;
-    // cout << "x: " << GF_field_log[x] << "y: " << GF_field_log[y] << "result: " << GF_field_exp[((GF_field_log[x] + GF_field_log[y]) % 255)] << endl;
     return GF_field_exp[((GF_field_log[x] + GF_field_log[y]) % 255)];  // should be gf_exp[(gf_log[x]+gf_log[y])%255] if gf_exp wasn't oversized
 }
 
 int gf_pow(int x, int power) {
-    cout << ">gf pow: " << GF_field_exp[(GF_field_log[x] * power) % 255] << " with x=" << x << ", power=" << power << endl;
     return GF_field_exp[(GF_field_log[x] * power) % 255];
 }
 
@@ -123,8 +120,6 @@ vector<int> gf_poly_mul(vector<int> p, vector<int> q) {
     for (int i = 0; i < p.size() + q.size() - 1; i++)
         r.push_back(0);
 
-    // cout << "before bef: ";
-    // showvector(r);
     //  Compute the polynomial multiplication (just like the outer product of two vectors,
     //  we multiply each coefficients of p with all coefficients of q)
     for (int j = 0; j < q.size(); j++) {
@@ -138,22 +133,11 @@ vector<int> gf_poly_mul(vector<int> p, vector<int> q) {
             int itx = *it;
             int itpx = *itp;
             int itqx = *itq;
-            // cout << "before===> " << itx << endl;
-            //  cout << "item in p at: " << i << " is: " << itpx << endl;
-            //  cout << "item in q at: " << j << " is: " << itqx << endl;
             int tmp;
-            // cout << "before===> ";
-            // showvector(r);
 
-            // auto l = r.erase(it);
-            // cout << ">>" << *l << endl;
             tmp = gf_mul(itpx, itqx);
-            // cout << "xor(" << itx << ", " << tmp << ") = " << (itx ^ gf_mul(itpx, itqx)) << endl;
             auto k = r.erase(it);
             r.insert(k, itx ^ gf_mul(itpx, itqx));  // equivalent to: r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))
-            // cout << "after:  ";
-            // cout << "after===> ";
-            // showvector(r);
         }
     }
     return r;
@@ -190,17 +174,12 @@ vector<int> rs_generator_poly(int nsym) {
         vector<int> tmp;
         tmp.push_back(1);
         tmp.push_back(gf_pow(3, i));
-        // cout << "tmp: ";
-        // showvector(tmp);
         g = gf_poly_mul(g, tmp);
-        // cout << "g after: ";
-        // showvector(g);
-        // cout << "rs gener: ";
-        // showvector(g);
-        // cout << "===================" << endl;
     }
-    cout << "generator poly: ";
-    showvector(g);
+    if (DEBUG) {
+        cout << "generator poly: ";
+        showvector(g);
+    }
     return g;
 }
 
@@ -209,7 +188,6 @@ std::vector<int> rs_encode_msg(const std::vector<int>& msg_in, int nsym) {
         throw std::invalid_argument("Message is too long");
     }
 
-    cout << nsym << endl;
     std::vector<int> gen = rs_generator_poly(nsym);
     std::vector<int> msg_out(msg_in.size() + gen.size() - 1);
 
@@ -217,29 +195,17 @@ std::vector<int> rs_encode_msg(const std::vector<int>& msg_in, int nsym) {
     for (int i = 0; i < msg_in.size(); i++) {
         msg_out[i] = msg_in[i];
     }
-    cout << "msg_out: ";
-    showvector(msg_out);
-
-    cout << "msg_in: ";
-    showvector(msg_in);
 
     for (int i = 0; i < msg_in.size(); i++) {
         int coef = msg_out[i];
 
         if (coef != 0) {
             for (int j = 1; j < gen.size(); j++) {
-                // cout << endl;
-                // cout << "msg_out[i,j]: " << msg_out[i + j] << endl;
-                // cout << "second: " << gf_mul(gen[j], coef) << endl;
-                // cout << "genj: " << gen[j] << "coef: " << coef << endl;
                 msg_out[i + j] ^= gf_mul(gen[j], coef);
-                // cout << "i: " << i << "j: " << j << endl;
-                // showvector(msg_out);
             }
         }
     }
 
-    showvector(msg_out);
     return msg_out;
 }
 
@@ -252,8 +218,6 @@ int main(int argc, char** argv) {
     bool decrypt_switch = false;
     bool L_opt = false;
     int opt;
-
-    bool debug = false;
 
     // read and parse program arguments
     while ((opt = getopt(argc, argv, "edn:t:k:m:h")) != -1) {
@@ -293,13 +257,20 @@ int main(int argc, char** argv) {
         msg_in.assign(t_opt.begin(), t_opt.end());
 
         auto a = rs_encode_msg(msg_in, n_opt - msg_in.size());
-        showvector(msg_in);
+
+        if (DEBUG) {
+            cout << "message in: ";
+            showvector(msg_in);
+        }
 
         a.erase(a.begin(), a.begin() + msg_in.size());
-
         for (int x : a) msg_in.push_back(x);
 
-        showvector(msg_in);
+        if (DEBUG) {
+            cout << "message out: ";
+            showvector(msg_in);
+        }
+
         for (int x : msg_in) {
             std::bitset<8> bits(x);         // create a bitset with 8 bits, initialized with the value of x
             std::cout << bits.to_string();  // print the binary representation of the bitset
@@ -311,20 +282,13 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-// 01100001 01100010 011000110 11110000 1011111
-// 01100001 01100010 011000110 11110000 1011111
-
 /*
-011000100110110101110011001100000110110001111100
-011000100110110101110011001100000110110001111100
+0110000101100010011000110111100001011111
+
 011000100110110101110011001100000110110001111100
 
 0100100001100101011011000110110001101111001011000010000001110111011011110111001001101100011001000010000110001101000100111111010011111001010000110001000011100101
-0100100001100101011011000110110001101111001011000010000001110111011011110111001001101100011001000010000110001101000100111111010011111001010000110001000011100101
-0100100001100101011011000110110001101111001011000010000001110111011011110111001001101100011001000010000110001101000100111111010011111001010000110001000011100101
 
-0100001001100101011110100110010001110010011000010111010001101111011101100110010100100000011000010010000001101101011011110110001001101001011011000110111001101001001000000111001101101001011101000110010101000001100011101110100101101110011010100001110010011110
-0100001001100101011110100110010001110010011000010111010001101111011101100110010100100000011000010010000001101101011011110110001001101001011011000110111001101001001000000111001101101001011101000110010101000001100011101110100101101110011010100001110010011110
 0100001001100101011110100110010001110010011000010111010001101111011101100110010100100000011000010010000001101101011011110110001001101001011011000110111001101001001000000111001101101001011101000110010101000001100011101110100101101110011010100001110010011110
 
 */
