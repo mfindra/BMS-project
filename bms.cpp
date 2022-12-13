@@ -128,14 +128,11 @@ int gf_pow(unsigned int x, int power) {
 }
 
 vector<int> gf_poly_mul(vector<int> p, vector<int> q) {
-    showvector(p);
-    showvector(q);
     // Multiply two polynomials, inside Galois Field
     //  Pre-allocate the result array
     std::vector<int> r(p.size() + q.size() - 1);
     for (int j = 0; j < q.size(); ++j) {
         for (int i = 0; i < p.size(); ++i) {
-            cout << "gf_mul: " << gf_mul(p[i], q[j]) << endl;
             r[i + j] ^= gf_mul(p[i], q[j]);  // equivalent to: r[i + j] = gf_add(r[i+j], gf_mul(p[i], q[j]))
                                              // -- you can see it's your usual polynomial multiplication
         }
@@ -194,12 +191,6 @@ std::vector<int> gf_poly_div(const std::vector<int>& dividend, const std::vector
     for (auto it = msg_out.end() - 1; it >= msg_out.end() - abs(separator); it--) {
         b.insert(b.begin(), (*it));
     }
-    cout << "gf_poly_div: ";
-    showvector(b);
-    cout << "divident: ";
-    showvector(dividend);
-    cout << "divisor: ";
-    showvector(divisor);
     return b;  // return quotient, remainder
 }
 
@@ -212,10 +203,6 @@ vector<int> rs_generator_poly(int nsym) {
         tmp.push_back(1);
         tmp.push_back(gf_pow(3, i));
         g = gf_poly_mul(g, tmp);
-    }
-    if (DEBUG) {
-        cout << "generator poly: ";
-        showvector(g);
     }
     return g;
 }
@@ -249,10 +236,7 @@ vector<int> gf_poly_scale(const vector<int>& p, int x) {
     vector<int> r(p.size());
     for (int i = 0; i < p.size(); i++) {
         r[i] = gf_mul(p[i], x);
-        cout << ">" << r[i] << " " << p[i] << " " << x << "<" << endl;
     }
-    cout << "--" << endl;
-
     return r;
 }
 
@@ -274,8 +258,6 @@ std::vector<int> rs_calc_syndromes(const std::vector<int>& msg, int nsym) {
     // This is not necessary, you can adapt subsequent computations to start from 0 instead of skipping the first iteration (ie, the often seen range(1, n-k+1)),
     synd.insert(synd.begin(), 0);
 
-    cout << "rs_calc_syndromes: ";
-    showvector(synd);
     return synd;
 }
 
@@ -303,16 +285,12 @@ std::vector<int> rs_find_errata_locator(const std::vector<int>& e_pos) {
 
 std::vector<int> rs_find_error_evaluator(const std::vector<int>& synd, const std::vector<int>& err_loc, int nsym) {
     // Omega(x) = [ Synd(x) * Error_loc(x) ] mod x^(n-k+1)
-    cout << "===" << endl;
 
     std::vector<int> v{1};
     std::vector<int> tmp(nsym + 1, 0);
     v.insert(v.end(), tmp.begin(), tmp.end());
 
     std::vector<int> remainder = gf_poly_div(gf_poly_mul(synd, err_loc), v);
-    cout << "reminder: ";
-    showvector(remainder);
-    cout << "===" << endl;
     return remainder;
 }
 
@@ -333,23 +311,17 @@ std::vector<int> rs_find_errors(std::vector<int>& err_loc, int nmess) {
 }
 
 std::vector<int> rs_find_error_locator(const std::vector<int>& synd, int nsym, int erase_count) {
-    cout << "rs_find_error_args: ";
-    showvector(synd);
-    cout << nsym << "," << erase_count << endl;
     std::vector<int> err_loc{1};
     std::vector<int> old_loc{1};
 
     int synd_shift = synd.size() - nsym;
-    cout << "synd " << synd_shift << endl;
     for (int i = 0; i < nsym - erase_count; i++) {
         int K = i + synd_shift;  //(erase_loc.empty()) ? (i + synd_shift) : (erase_count + i + synd_shift);
         int delta = synd[K];
-        showvector(err_loc);
         for (int j = 1; j < err_loc.size(); j++) {
             delta ^= gf_mul(err_loc.at(err_loc.size() - (j + 1)), synd[K - j]);
         }
 
-        cout << "K: " << delta << endl;
         old_loc.push_back(0);
 
         if (delta != 0) {
@@ -359,8 +331,6 @@ std::vector<int> rs_find_error_locator(const std::vector<int>& synd, int nsym, i
                 err_loc = new_loc;
             }
             err_loc = gf_poly_add(err_loc, gf_poly_scale(old_loc, delta));
-            cout << "old_loc: ";
-            showvector(old_loc);
         }
     }
 
@@ -373,14 +343,11 @@ std::vector<int> rs_find_error_locator(const std::vector<int>& synd, int nsym, i
         }
     }
 
-    cout << "err_loc: ";
-    showvector(err_loc);
-
     err_loc.erase(err_loc.begin(), err_loc.begin() + count);
 
     int errs = err_loc.size() - 1;
     if ((errs)*2 > nsym) {
-        exit;  // too many errors to correct
+        exit(3);  // too many errors to correct
     }
     return err_loc;
 }
@@ -413,21 +380,16 @@ vector<int> rs_correct_errata(vector<int>& msg_in, vector<int>& synd, vector<int
     reverse(synd.begin(), synd.end());
     vector<int> err_eval = rs_find_error_evaluator(synd, err_loc, err_loc.size() - 1);
 
-    showvector(coef_pos);
     vector<int> X;
     for (int i = 0; i < coef_pos.size(); i++) {
         int l = 255 - coef_pos[i];
         X.push_back(gf_pow(3, -l));
     }
 
-    cout << "X:";
-    showvector(X);
-
     vector<int> E(msg_in.size(), 0);
     int Xlength = X.size();
     for (int i = 0; i < X.size(); i++) {
         int Xi_inv = gf_inverse(X[i]);
-        cout << "Xi_inv: " << X[i] << endl;
 
         vector<int> err_loc_prime_tmp;
         for (int j = 0; j < Xlength; j++) {
@@ -435,23 +397,13 @@ vector<int> rs_correct_errata(vector<int>& msg_in, vector<int>& synd, vector<int
                 err_loc_prime_tmp.push_back(gf_sub(1, gf_mul(Xi_inv, X[j])));
             }
         }
-        cout << "err_loc_prime_tmp:";
-        showvector(err_loc_prime_tmp);
         int err_loc_prime = 1;
         for (auto coef : err_loc_prime_tmp) {
             err_loc_prime = gf_mul(err_loc_prime, coef);
         }
-        cout << "err_loc_prime: " << err_loc_prime << endl;
-
-        cout << "err_eval";
-        showvector(err_eval);
 
         auto y = gf_poly_eval(err_eval, Xi_inv);
-        cout << "y: " << y << endl;
-
         y = gf_mul(gf_pow(X[i], 1 - 1), y);
-
-        cout << "y: " << y << endl;
 
         if (err_loc_prime == 0) {
             exit;
@@ -461,8 +413,6 @@ vector<int> rs_correct_errata(vector<int>& msg_in, vector<int>& synd, vector<int
         E[err_pos[i]] = magnitude;
     }
     msg_in = gf_poly_add(msg_in, E);
-    cout << "msg_errata: ";
-    showvector(msg_in);
     return msg_in;
 }
 
@@ -481,34 +431,22 @@ vector<int> rs_correct_msg(const vector<int>& msg_in, int nsym) {
     auto synd = rs_calc_syndromes(msg_out, nsym);
 
     if (*std::max_element(synd.begin(), synd.end()) == 0) {
-        cout << "message correct" << endl;
         // return {msg_out.begin(), msg_out.end() - nsym}, {msg_out.end() - nsym, msg_out.end()};
         return msg_out;
     }
 
     auto fsynd = rs_forney_syndromes(synd, erase_pos, msg_out.size());
-    cout << "fsynd: ";
-    showvector(fsynd);
-
     auto err_loc = rs_find_error_locator(fsynd, nsym, erase_pos.size());
-    cout << "err_loc: ";
-    showvector(err_loc);
-
     reverse(err_loc.begin(), err_loc.end());
     auto err_pos = rs_find_errors(err_loc, msg_out.size());
-    cout << "err_pos_: ";
-    showvector(err_pos);
 
     if (err_pos.empty()) {
         exit(6);
     }
 
-    // std::cout << "msg_out: " << msg_out << " synd: " << synd <<
     vector<int> tmp = erase_pos;
     tmp.insert(tmp.end(), err_pos.begin(), err_pos.end());
     msg_out = rs_correct_errata(msg_out, synd, tmp);
-
-    showvector(msg_out);
 
     if (!rs_check(msg_out, nsym))
         exit(7);
@@ -565,18 +503,8 @@ int main(int argc, char** argv) {
 
         auto a = rs_encode_msg(msg_in, n_opt - msg_in.size());
 
-        if (DEBUG) {
-            cout << "message in: ";
-            showvector(msg_in);
-        }
-
         a.erase(a.begin(), a.begin() + msg_in.size());
         for (int x : a) msg_in.push_back(x);
-
-        if (DEBUG) {
-            cout << "message out: ";
-            showvector(msg_in);
-        }
 
         for (int x : msg_in) {
             std::bitset<8> bits(x);         // create a bitset with 8 bits, initialized with the value of x
@@ -585,30 +513,15 @@ int main(int argc, char** argv) {
         cout << endl;
 
     } else if (decrypt_switch) {
-        cout << "Decrypting" << endl;
         std::vector<int> res;
-
         for (size_t i = 0; i < m_opt.size(); i += 8) {
             std::string part = m_opt.substr(i, 8);
             int val = (int)std::stoul(part, nullptr, 2);
             res.push_back(val);
         }
-        showvector(res);
-        if (rs_check(res, n_opt - k_opt))
-            cout << "yeah" << endl;
-        else
-            cout << "nay" << endl;
 
-        /* vector<int> tmp{33, 98, 99, 120, 95};
-        vector<int> tmo{218, 44, 0};
-        vector<int> tmi{0};
-        rs_correct_errata(tmp, tmo, tmi); */
-
-        cout << "original message:  ";
-        showvector(res);
         vector<int> msg_out;
         msg_out = rs_correct_msg(res, n_opt - k_opt);
-        showvector(msg_out);
         for (int i = 0; i < k_opt; i++) {
             cout << char(msg_out[i]);
         }
