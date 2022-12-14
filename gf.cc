@@ -104,20 +104,20 @@ int BMS_GF::gf_inverse(int x) {
     return GF_field_exp[255 - GF_field_log[x]];
 }
 
-std::vector<int> BMS_GF::gf_poly_div(const std::vector<int>& dividend, const std::vector<int>& divisor) {
-    std::vector<int> msg_out = dividend;  // Copy the dividend
-    for (int i = 0; i < dividend.size() - (divisor.size() - 1); i++) {
+std::vector<int> BMS_GF::gf_poly_div(const std::vector<int>& x, const std::vector<int>& y) {
+    std::vector<int> msg_out = x;  // Copy the dividend
+    for (int i = 0; i < x.size() - (y.size() - 1); i++) {
         int coef = msg_out[i];  // precaching
         if (coef != 0) {
-            for (int j = 1; j < divisor.size(); j++) {
-                if (divisor[j] != 0) {
-                    msg_out[i + j] ^= gf_mul(divisor[j], coef);  // equivalent to the more mathematically correct
+            for (int j = 1; j < y.size(); j++) {
+                if (y[j] != 0) {
+                    msg_out[i + j] ^= gf_mul(y[j], coef);  // equivalent to the more mathematically correct
                 }
             }
         }
     }
 
-    int separator = -(divisor.size() - 1);
+    int separator = -(y.size() - 1);
     std::vector<int> b;
     for (auto it = msg_out.end() - 1; it >= msg_out.end() - abs(separator); it--) {
         b.insert(b.begin(), (*it));

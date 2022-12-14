@@ -5,7 +5,6 @@ project: BMS
 
 #include <bits/stdc++.h>
 #include <getopt.h>
-#include <stdio.h>
 
 #include <iostream>
 #include <string>
