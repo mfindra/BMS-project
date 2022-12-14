@@ -59,4 +59,4 @@ $(MAIN): $(OBJS)
 #
 
 clean:
-	rm -f $(MAIN) $(OBJS)
+	rm -f $(MAIN) $(OBJS) $(NAME)

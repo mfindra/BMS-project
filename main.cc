@@ -19,7 +19,7 @@ void PrintHelp() {
     std::cout << "===========================================================================" << std::endl
               << std::endl;
     std::cout << "Descrition: Encrypt and decrypt message using Reed-Solomon algorithm as described." << std::endl;
-    std::cout << "Default generator is 3 and fcr = 1" << std::endl
+    std::cout << "Default generator = 3 and fcr = 1. Galois field tables are precomputed." << std::endl
               << std::endl;
     std::cout << "Arguments: -e                 : encrypt mode " << std::endl;
     std::cout << "           -d                 : decrypt mode " << std::endl;
