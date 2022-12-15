@@ -1,5 +1,5 @@
 /**
- * @file rs.hh
+ * @file reed-salomon.hh
  * @author Michal Findra, xfindr00
  * @brief Reed-Salomon code operations
  * @date 12.12.2022

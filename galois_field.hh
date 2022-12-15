@@ -1,5 +1,5 @@
 /**
- * @file gf.hh
+ * @file galois-field.hh
  * @author Michal Findra, xfindr00
  * @brief Galois field operations
  * @date 12.12.2022

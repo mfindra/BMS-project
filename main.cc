@@ -23,11 +23,11 @@
 
 // print help message to standard output
 void PrintHelp() {
-    std::cout << "ENCRYPT AND DECRYPT MESSAGE USING REED-SOLOMON ALGORITHM - BMS PROJECT 2022" << std::endl;
-    std::cout << "===========================================================================" << std::endl
+    std::cout << "    ENCRYPT AND DECRYPT MESSAGE USING REED-SOLOMON ALGORITHM - BMS PROJECT 2022" << std::endl;
+    std::cout << "===================================================================================" << std::endl
               << std::endl;
-    std::cout << "Descrition: Encrypt and decrypt message using Reed-Solomon algorithm as described." << std::endl;
-    std::cout << "Default generator = 3 and fcr = 1. Galois field tables are precomputed." << std::endl
+    std::cout << "Description: Encrypt and decrypt message using Reed-Solomon algorithm as described." << std::endl;
+    std::cout << "Defaults: generator = 3 and fcr = 1. Galois field tables are precomputed." << std::endl
               << std::endl;
     std::cout << "Arguments: -e                 : encrypt mode " << std::endl;
     std::cout << "           -d                 : decrypt mode " << std::endl;
@@ -44,14 +44,14 @@ void PrintHelp() {
 }
 
 int main(int argc, char** argv) {
-    int n_opt;  // coded message length
-    int k_opt;  // message length
-    std::string t_opt;
-    std::string m_opt;  // coded message
-    bool encrypt_switch = false;
-    bool decrypt_switch = false;
-    bool L_opt = false;
+    int n_opt;                    // coded message length
+    int k_opt;                    // message length
+    std::string t_opt;            // message to be encoded
+    std::string m_opt;            // message to be decoded
+    bool encrypt_switch = false;  // run app in encrypt mode
+    bool decrypt_switch = false;  // run app in decrypt mode
     int opt;
+
     REED_SOLOMON RS;
 
     // read and parse program arguments
@@ -103,6 +103,7 @@ int main(int argc, char** argv) {
         std::cout << std::endl;
 
     } else if (decrypt_switch) {
+        // create vector of integers from input message
         std::vector<int> res;
         for (size_t i = 0; i < m_opt.size(); i += 8) {
             std::string part = m_opt.substr(i, 8);
@@ -110,6 +111,7 @@ int main(int argc, char** argv) {
             res.push_back(val);
         }
 
+        // decode message
         std::vector<int> msg_out;
         msg_out = RS.correct_msg(res, n_opt - k_opt);
         for (int i = 0; i < k_opt; i++) {

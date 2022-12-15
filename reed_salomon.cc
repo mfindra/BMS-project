@@ -1,5 +1,5 @@
 /**
- * @file rs.cc
+ * @file reed-salomon.cc
  * @author Michal Findra, xfindr00
  * @brief Reed-Salomon code operations
  * @date 12.12.2022
@@ -12,7 +12,6 @@
     licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)
  */
 
-// other libs
 #include "reed_salomon.hh"
 
 #include <algorithm>
