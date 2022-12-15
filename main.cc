@@ -1,7 +1,16 @@
-/*
-author: Michal Findra, xfindr00
-project: BMS
-*/
+/**
+ * @file main.cc
+ * @author Michal Findra, xfindr00
+ * @brief main function for Reed-Salomon encoding and decoding
+ * @date 12.12.2022
+ * Resources used:
+ * - Andrew Brown, Stephen Larroque - unireedsolomon
+    (https://pypi.org/project/unireedsolomon/)
+    MIT licensed (https://mit-license.org)
+ * - Wikiversity - Reed–Solomon codes for coders
+    (https://en.wikiversity.org/wiki/Reed%E2%80%93Solomon_codes_for_coders)
+    licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)
+ */
 
 #include <bits/stdc++.h>
 #include <getopt.h>
@@ -10,7 +19,7 @@ project: BMS
 #include <string>
 #include <vector>
 
-#include "rs.hh"
+#include "reed_salomon.hh"
 
 // print help message to standard output
 void PrintHelp() {
@@ -43,7 +52,7 @@ int main(int argc, char** argv) {
     bool decrypt_switch = false;
     bool L_opt = false;
     int opt;
-    BMS_RS RS;
+    REED_SOLOMON RS;
 
     // read and parse program arguments
     while ((opt = getopt(argc, argv, "edn:t:k:m:h")) != -1) {
@@ -82,8 +91,8 @@ int main(int argc, char** argv) {
         std::vector<int> msg_in;
         msg_in.assign(t_opt.begin(), t_opt.end());
 
-        auto a = RS.rs_encode_msg(msg_in, n_opt - msg_in.size());
-
+        // encode message
+        auto a = RS.encode_msg(msg_in, n_opt - msg_in.size());
         a.erase(a.begin(), a.begin() + msg_in.size());
         for (int x : a) msg_in.push_back(x);
 
@@ -102,7 +111,7 @@ int main(int argc, char** argv) {
         }
 
         std::vector<int> msg_out;
-        msg_out = RS.rs_correct_msg(res, n_opt - k_opt);
+        msg_out = RS.correct_msg(res, n_opt - k_opt);
         for (int i = 0; i < k_opt; i++) {
             std::cout << char(msg_out[i]);
         }

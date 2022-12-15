@@ -3,15 +3,22 @@
  * @author Michal Findra, xfindr00
  * @brief Galois field operations
  * @date 12.12.2022
+ * Resources used:
+ * - Andrew Brown, Stephen Larroque - unireedsolomon
+    (https://pypi.org/project/unireedsolomon/)
+    MIT licensed (https://mit-license.org)
+ * - Wikiversity - Reed–Solomon codes for coders
+    (https://en.wikiversity.org/wiki/Reed%E2%80%93Solomon_codes_for_coders)
+    licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)
  */
 #include <vector>
 #ifndef GF_H
 #define GF_H
 
-class BMS_GF {
+class GALOIS_FIELD {
    public:
     // constructor
-    BMS_GF();
+    GALOIS_FIELD();
 
     /**
      * @brief Multiplication of two operands in Galois fields
@@ -20,7 +27,7 @@ class BMS_GF {
      * @param y Multiplier
      * @return int
      */
-    int gf_mul(int x, int y);
+    int multiplication(int x, int y);
 
     /**
      * @brief Raising x to power in Galois fields
@@ -29,7 +36,7 @@ class BMS_GF {
      * @param power Exponent
      * @return int
      */
-    int gf_pow(unsigned int x, int power);
+    int pow(unsigned int x, int power);
 
     /**
      * @brief Polynomial multiplication of two vectors in Galois fields
@@ -38,7 +45,7 @@ class BMS_GF {
      * @param q Second vector
      * @return std::vector<int>
      */
-    std::vector<int> gf_poly_mul(std::vector<int> p, std::vector<int> q);
+    std::vector<int> polynomial_multiplication(std::vector<int> p, std::vector<int> q);
 
     /**
      * @brief Division in Galois fields
@@ -47,7 +54,7 @@ class BMS_GF {
      * @param y Divisor
      * @return int
      */
-    int gf_div(int x, int y);
+    int division(int x, int y);
 
     /**
      * @brief Subtraction in Galois fields
@@ -56,16 +63,16 @@ class BMS_GF {
      * @param y Subtrahend
      * @return int
      */
-    int gf_sub(int x, int y);
+    int subtraction(int x, int y);
 
     /**
-     * @brief Polynomial addition
+     * @brief Polynomial addition in Galois fields
      *
      * @param p Augend
      * @param q Addend
      * @return std::vector<int>
      */
-    std::vector<int> gf_poly_add(std::vector<int> p, std::vector<int> q);
+    std::vector<int> polynomial_addition(std::vector<int> p, std::vector<int> q);
 
     /**
      * @brief Element inversion In Galois fields
@@ -73,7 +80,7 @@ class BMS_GF {
      * @param x base
      * @return int
      */
-    int gf_inverse(int x);
+    int inverse(int x);
 
     /**
      * @brief Polynomial division in Galois fields
@@ -82,7 +89,7 @@ class BMS_GF {
      * @param y Divisor
      * @return std::vector<int>
      */
-    std::vector<int> gf_poly_div(const std::vector<int>& x, const std::vector<int>& y);
+    std::vector<int> polynomial_division(const std::vector<int>& x, const std::vector<int>& y);
 
     /**
      * @brief Polynomial scale in Galois fields
@@ -91,7 +98,7 @@ class BMS_GF {
      * @param x scaler
      * @return std::vector<int>
      */
-    std::vector<int> gf_poly_scale(const std::vector<int>& p, int x);
+    std::vector<int> polynomial_scale(const std::vector<int>& p, int x);
 
     /**
      * @brief Evaluate polynomial in Galois fields
@@ -100,7 +107,7 @@ class BMS_GF {
      * @param x evaluator
      * @return int
      */
-    int gf_poly_eval(const std::vector<int>& poly, int x);
+    int polynomial_evaluation(const std::vector<int>& poly, int x);
 
    private:
 };
