@@ -80,8 +80,8 @@ std::vector<int> GALOIS_FIELD::polynomial_multiplication(std::vector<int> p, std
     std::vector<int> r(p.size() + q.size() - 1);
     for (int j = 0; j < q.size(); ++j) {
         for (int i = 0; i < p.size(); ++i) {
-            r[i + j] ^= GALOIS_FIELD::multiplication(p[i], q[j]);  // equivalent to: r[i + j] = gf_add(r[i+j], multiplication(p[i], q[j]))
-                                                                   // -- you can see it's your usual polynomial multiplication
+            // : r[i + j] = gf_add(r[i+j], multiplication(p[i], q[j]))
+            r[i + j] ^= GALOIS_FIELD::multiplication(p[i], q[j]);
         }
     }
     return r;
@@ -128,7 +128,7 @@ std::vector<int> GALOIS_FIELD::polynomial_division(const std::vector<int>& x, co
         if (coef != 0) {
             for (int j = 1; j < y.size(); j++) {
                 if (y[j] != 0) {
-                    msg_out[i + j] ^= GALOIS_FIELD::multiplication(y[j], coef);  // equivalent to the more mathematically correct
+                    msg_out[i + j] ^= GALOIS_FIELD::multiplication(y[j], coef);
                 }
             }
         }
@@ -139,7 +139,7 @@ std::vector<int> GALOIS_FIELD::polynomial_division(const std::vector<int>& x, co
     for (auto it = msg_out.end() - 1; it >= msg_out.end() - abs(separator); it--) {
         b.insert(b.begin(), (*it));
     }
-    return b;  // return quotient, remainder
+    return b;
 }
 
 // Polynomial scale in Galois fields

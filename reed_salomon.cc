@@ -268,7 +268,6 @@ std::vector<int> REED_SOLOMON::correct_msg(const std::vector<int>& msg_in, int n
 
     // If no errors return message
     if (*std::max_element(synd.begin(), synd.end()) == 0) {
-        // return {msg_out.begin(), msg_out.end() - nsym}, {msg_out.end() - nsym, msg_out.end()};
         return msg_out;
     }
 
